@@ -5,7 +5,10 @@ const config = require('./config');
 const connectDB = require('./config/db');
 const logger = require('./utils/logger');
 const webhookRoutes = require('./routes/webhookRoutes'); // Will create this next
-const errorHandler = require('./middlewares/errorHandler'); // Will create this later
+
+//const errorHandler = require('./middlewares/errorHandler'); // Will create this later
+
+
 const requestLogger = require('./middlewares/requestLogger'); // Will create this next
 
 const app = express();
