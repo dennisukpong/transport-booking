@@ -2,55 +2,63 @@
 const express = require('express');
 const router = express.Router();
 const logger = require('../utils/logger');
-const whatsappService = require('../services/whatsappService'); // New service
+const whatsappService = require('../services/whatsappService');
 const twilio = require('twilio'); // Needed for MessagingResponse
+const config = require('../config');
 
-// IMPORTANT: Twilio sends application/x-www-form-urlencoded
-// Ensure bodyParser is configured for this, which it usually is by default
-// if using `app.use(bodyParser.urlencoded({ extended: true }));`
+// Twilio webhook validation middleware (keep this, but ensure it's correct if enabled)
+const twilioWebhookMiddleware = twilio.webhook({
+    authToken: config.twilio.authToken,
+    url: config.env === 'development' ? undefined : `https://whatsapp-transport-booking.onrender.com/webhook`, // Or your actual public domain
+});
 
-router.post('/', async (req, res) => {
-    // Log the entire incoming payload from Twilio for debugging
-    logger.info('Received Twilio WhatsApp webhook payload:', { body: req.body });
+router.post('/', twilioWebhookMiddleware, async (req, res) => { // Keep validation middleware if you want
+    logger.info('Received Twilio WhatsApp webhook payload (validated):', { body: req.body });
 
     const incoming = whatsappService.parseIncomingMessage(req.body);
 
     if (incoming) {
         logger.info(`Message from ${incoming.sender}: "${incoming.messageText}"`);
 
-        // --- MVP: Echo back or simple welcome ---
-        // For simple echo, you can use TwiML directly.
-        // For a complex bot, it's better to process asynchronously and send replies
-        // using whatsappService.sendTextMessage.
-
-        // Example of an asynchronous reply (recommended for complex bots)
-        // Send a 200 OK response to Twilio immediately.
-        res.status(200).send(''); // Important: Twilio expects a 200 OK or TwiML
-
-        // Process message in the background
-        try {
-            // In a real bot, this would be where your main bot logic goes
-            // e.g., sessionService.handleUserMessage(incoming.sender, incoming.messageText);
-            const replyMessage = `You said: "${incoming.messageText}". (Echo from Twilio bot)`;
-            await whatsappService.sendTextMessage(`whatsapp:${incoming.sender}`, replyMessage);
-            logger.info(`Replied asynchronously to ${incoming.sender}.`);
-        } catch (error) {
-            logger.error(`Error processing or replying to message from ${incoming.sender}: ${error.message}`, { error: error, incomingMessage: incoming });
-        }
-
-        // --- Alternative: Synchronous TwiML Response (for simple replies) ---
-        // If you want to reply synchronously (i.e., Twilio expects your app to return the message body),
-        // you would use Twilio's TwiML MessagingResponse.
-        /*
+        // --- THE FIX IS HERE: Synchronous TwiML Response ---
         const twiml = new twilio.twiml.MessagingResponse();
-        twiml.message(`You said: "${incoming.messageText}". (Echo from Twilio TwiML)`);
+        const replyMessage = `You said: "${incoming.messageText}". (Echo from Twilio TwiML bot)`;
+
+        twiml.message(replyMessage);
+
         res.writeHead(200, { 'Content-Type': 'text/xml' });
         res.end(twiml.toString());
-        logger.info(`Replied synchronously to ${incoming.sender}.`);
+        logger.info(`Replied synchronously to ${incoming.sender} with TwiML.`);
+
+        // --- Optional: Asynchronous processing for complex tasks ---
+        // For simple echoes, you don't need the async call anymore.
+        // For complex bot logic (DB lookups, NLP, payments), you'd trigger it *after* sending TwiML
+        // but not await it if it's long-running. You'd then use whatsappService.sendTextMessage
+        // for subsequent messages or for messages that don't need to be immediate webhook replies.
+        // Example:
+        /*
+        (async () => {
+            try {
+                // Simulate a delay for complex processing
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                // Perform NLP, DB lookups, etc.
+                logger.info("Asynchronous task completed for this message.");
+                // If you need to send another message *later* in the conversation:
+                // await whatsappService.sendTextMessage(`whatsapp:${incoming.sender}`, "This is a follow-up message after processing.");
+            } catch (error) {
+                logger.error(`Error during asynchronous processing for ${incoming.sender}: ${error.message}`, { error: error });
+            }
+        })();
         */
+
     } else {
-        logger.warn('Received webhook with unparseable message from Twilio.', { body: req.body });
-        res.status(400).send('Bad Request: Unable to parse message');
+        logger.warn('Received webhook with unparseable message from Twilio (after validation).', { body: req.body });
+        // Even for unparseable messages, Twilio expects a 200 OK or TwiML.
+        // So, respond with an empty TwiML or a simple error message.
+        const twiml = new twilio.twiml.MessagingResponse();
+        twiml.message("Sorry, I didn't understand that. Please try again.");
+        res.writeHead(400, { 'Content-Type': 'text/xml' }); // Or 200 OK if you just want to acknowledge
+        res.end(twiml.toString());
     }
 });
 
