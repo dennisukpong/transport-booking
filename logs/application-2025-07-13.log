@@ -1,0 +1,7 @@
+{"level":"info","message":"MongoDB connected for seeding.","timestamp":"2025-07-13 19:29:14"}
+{"level":"info","message":"Existing data cleared.","timestamp":"2025-07-13 19:29:15"}
+{"level":"info","message":"Seeded 3 vehicles.","timestamp":"2025-07-13 19:29:16"}
+{"level":"info","message":"Seeded 4 routes.","timestamp":"2025-07-13 19:29:16"}
+{"level":"info","message":"Seeded 5 departures.","timestamp":"2025-07-13 19:29:16"}
+{"level":"info","message":"Seeding completed successfully!","timestamp":"2025-07-13 19:29:16"}
+{"level":"info","message":"MongoDB disconnected.","timestamp":"2025-07-13 19:29:16"}
