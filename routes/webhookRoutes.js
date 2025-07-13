@@ -2,42 +2,56 @@
 const express = require('express');
 const router = express.Router();
 const logger = require('../utils/logger');
-const whatsappService = require('../services/whatsappService');
-const twilio = require('twilio'); // Make sure you have this import for MessagingResponse
+const whatsappService = require('../services/whatsappService'); // For parsing incoming
+const conversationService = require('../services/conversationService'); // New service
+const twilio = require('twilio'); // Needed for MessagingResponse
 const config = require('../config');
 
-// Re-enable this if you want validation, but ensure it's correct
+// Twilio webhook validation middleware (re-enable and ensure working for production)
 const twilioWebhookMiddleware = twilio.webhook({
     authToken: config.twilio.authToken,
     url: config.env === 'development' ? undefined : `https://whatsapp-transport-booking.onrender.com/webhook`,
 });
 
-router.post('/', twilioWebhookMiddleware, async (req, res) => { // Keep validation if you fixed it, otherwise remove it temporarily
-    logger.info('Received Twilio WhatsApp webhook payload (validated):', { body: req.body });
+router.post('/', twilioWebhookMiddleware, async (req, res) => { // Keep validation if you've resolved it, or comment out for now
+    logger.info('Received Twilio WhatsApp webhook payload:', { body: req.body });
 
     const incoming = whatsappService.parseIncomingMessage(req.body);
 
     if (incoming) {
-        logger.info(`Message from ${incoming.sender}: "${incoming.messageText}"`);
+        logger.info(`Processing message from ${incoming.sender}: "${incoming.messageText}"`);
 
-        // --- THE NECESSARY FIX: Synchronous TwiML Response ---
+        // Create a TwiML response object for synchronous replies
         const twiml = new twilio.twiml.MessagingResponse();
-        const replyMessage = `You said: "${incoming.messageText}". (Echo from Twilio TwiML bot)`;
 
-        twiml.message(replyMessage);
+        try {
+            // Delegate the main conversational logic to the conversation service
+            await conversationService.handleIncomingMessage(
+                incoming.sender,
+                incoming.messageText,
+                twiml // Pass the TwiML object to be populated
+            );
 
-        res.writeHead(200, { 'Content-Type': 'text/xml' }); // Set content type for TwiML
-        res.end(twiml.toString()); // Send the TwiML response
-        logger.info(`Replied synchronously to ${incoming.sender} with TwiML.`);
+            // Send the TwiML response back to Twilio
+            res.writeHead(200, { 'Content-Type': 'text/xml' });
+            res.end(twiml.toString());
+            logger.info(`TwiML response sent for ${incoming.sender}.`);
 
-        // Any further complex, long-running logic can be done *after* res.end()
-        // but not awaited, so that the webhook response is sent quickly.
-        // For a simple echo, you don't even need the whatsappService.sendTextMessage call anymore.
+        } catch (error) {
+            logger.error(`Error during conversation handling for ${incoming.sender}: ${error.message}`, { error: error, incomingMessage: incoming });
+
+            // Fallback TwiML response in case of an application error
+            const errorTwiml = new twilio.twiml.MessagingResponse();
+            errorTwiml.message("Oops! Something went wrong on our end. Our team has been notified. Please try again later.");
+            res.writeHead(500, { 'Content-Type': 'text/xml' }); // Or 200 OK, depending on desired Twilio behavior
+            res.end(errorTwiml.toString());
+        }
 
     } else {
-        logger.warn('Received webhook with unparseable message from Twilio (after validation).', { body: req.body });
+        logger.warn('Received webhook with unparseable message from Twilio.', { body: req.body });
+        // Even for unparseable messages, Twilio expects a 200 OK or TwiML.
         const twiml = new twilio.twiml.MessagingResponse();
-        twiml.message("Sorry, I didn't understand that. Please try again.");
+        twiml.message("I'm sorry, I couldn't understand your message format.");
         res.writeHead(400, { 'Content-Type': 'text/xml' });
         res.end(twiml.toString());
     }
