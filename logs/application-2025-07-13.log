@@ -5,3 +5,5 @@
 {"level":"info","message":"Seeded 5 departures.","timestamp":"2025-07-13 19:29:16"}
 {"level":"info","message":"Seeding completed successfully!","timestamp":"2025-07-13 19:29:16"}
 {"level":"info","message":"MongoDB disconnected.","timestamp":"2025-07-13 19:29:16"}
+{"level":"info","message":"Server running on port 3000 in development mode.","timestamp":"2025-07-13 21:37:08"}
+{"level":"info","message":"MongoDB connected successfully.","timestamp":"2025-07-13 21:37:11"}
