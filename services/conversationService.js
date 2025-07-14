@@ -1,3 +1,4 @@
+
 // services/conversationService.js
 const sessionService = require('./sessionService');
 const whatsappService = require('./whatsappService');
@@ -11,8 +12,6 @@ const sendReply = async (waId, message, twiml) => {
     if (twiml) {
         twiml.message(message);
     } else {
-        // This path is for asynchronous replies, not used for immediate webhook responses
-        // Will be useful for notifications or out-of-band messages later
         await whatsappService.sendTextMessage(`whatsapp:${waId}`, message);
     }
 };
@@ -26,6 +25,7 @@ const conversationService = {
      * @param {object} twiml - The Twilio MessagingResponse object for synchronous reply.
      */
     handleIncomingMessage: async (waId, messageText, twiml) => {
+        // Always get the fresh session at the very start of processing any message
         let session = await sessionService.getSession(waId);
         let reply = '';
         messageText = messageText.trim().toLowerCase(); // Normalize input
@@ -34,13 +34,13 @@ const conversationService = {
 
         // Handle common commands regardless of state
         if (messageText === 'hi' || messageText === 'hello' || messageText === 'start' || messageText === 'menu') {
-            logger.debug(`[Conversation] Matched global 'menu' command.`);
-            session = await sessionService.resetSession(waId);
+            logger.debug(`[Conversation] Matched global 'menu' command. Resetting session.`);
+            session = await sessionService.resetSession(waId); // This already fetches/creates a fresh session
             reply = "Welcome to the Transport Booking Service! 👋\n\nHow can I help you today?\n\n*1.* 🚌 Book a new trip\n*2.* ℹ️ Check my booking\n*3.* 📞 Contact support";
             await sessionService.updateSessionStep(waId, 'welcome');
         } else if (messageText === 'reset' || messageText === 'cancel') {
-            logger.debug(`[Conversation] Matched global 'reset' command.`);
-            session = await sessionService.resetSession(waId);
+            logger.debug(`[Conversation] Matched global 'reset' command. Resetting session.`);
+            session = await sessionService.resetSession(waId); // This already fetches/creates a fresh session
             reply = "Okay, I've reset our conversation. How can I help you today?\n\n*1.* 🚌 Book a new trip";
             await sessionService.updateSessionStep(waId, 'welcome');
         } else {
@@ -48,6 +48,7 @@ const conversationService = {
             switch (session.currentStep) {
                 case 'welcome':
                     logger.debug(`[Conversation - welcome] Processing message: "${messageText}"`);
+                    // For this step, 'session' is already the fresh one from the start of the function.
                     if (messageText === '1' || messageText.includes('book')) {
                         logger.debug(`[Conversation - welcome] User wants to book a trip.`);
                         const origins = await Route.distinct('origin', { isActive: true });
@@ -57,6 +58,7 @@ const conversationService = {
                                     "\n\nPlease reply with the city name or number.";
                             await sessionService.updateSessionContext(waId, { availableOrigins: origins });
                             await sessionService.updateSessionStep(waId, 'ask_origin');
+                            // No need to refetch session immediately here, as the next turn will start handleIncomingMessage fresh.
                             logger.debug(`[Conversation - welcome] Origins fetched and stored in context: ${JSON.stringify(origins)}`);
                         } else {
                             reply = "Sorry, no departure locations are currently available. Please try again later.";
@@ -79,8 +81,9 @@ const conversationService = {
 
                 case 'ask_origin':
                     logger.debug(`[Conversation - ask_origin] Processing message: "${messageText}"`);
-                    // Fetch the latest session to ensure we have the most current context
-                    session = await sessionService.getSession(waId);
+                    // Ensure the session is fresh for this turn to access its context
+                    session = await sessionService.getSession(waId); // <<< ENSURE FRESH SESSION
+
                     const availableOrigins = session.context.availableOrigins || [];
                     logger.debug(`[Conversation - ask_origin] Available Origins in session context: ${JSON.stringify(availableOrigins)}`);
                     logger.debug(`[Conversation - ask_origin] Calling validateChoice with input: "${messageText}" and options: ${JSON.stringify(availableOrigins)}`);
@@ -101,14 +104,14 @@ const conversationService = {
                             logger.debug(`[Conversation - ask_origin] Destinations fetched and stored in context: ${JSON.stringify(destinations)}`);
                         } else {
                             reply = `Sorry, no destinations available from ${chosenOrigin}. Please choose a different origin or type 'reset'.`;
-                            await sessionService.resetSession(waId); // Restart if no destinations
+                            await sessionService.resetSession(waId); // Reset to welcome, which fetches new session implicitly
                             logger.warn(`[Conversation - ask_origin] No destinations found for origin ${chosenOrigin}. Resetting session.`);
                         }
                     } else {
                         logger.debug(`[Conversation - ask_origin] Chosen origin "${messageText}" IS NOT valid. Re-prompting.`);
                         reply = "I didn't recognize that departure city. Please choose from the list or type 'menu' to start over.";
-                        // Re-list origins if invalid input
-                        const origins = await Route.distinct('origin', { isActive: true }); // Re-fetch in case context was somehow lost or cleared
+                        // Re-list origins if invalid input (fetch fresh data, not relying on stale session.context)
+                        const origins = await Route.distinct('origin', { isActive: true });
                         if (origins && origins.length > 0) {
                             reply += "\n\nAvailable origins:\n" + origins.map((o, i) => `*${i + 1}.* ${o}`).join('\n');
                         }
@@ -117,7 +120,7 @@ const conversationService = {
 
                 case 'ask_destination':
                     logger.debug(`[Conversation - ask_destination] Processing message: "${messageText}"`);
-                    session = await sessionService.getSession(waId); // Refresh session for latest context
+                    session = await sessionService.getSession(waId); // <<< ENSURE FRESH SESSION
                     const availableDestinations = session.context.availableDestinations || [];
                     logger.debug(`[Conversation - ask_destination] Available Destinations in session context: ${JSON.stringify(availableDestinations)}`);
 
@@ -132,6 +135,7 @@ const conversationService = {
                     } else {
                         logger.debug(`[Conversation - ask_destination] Chosen destination "${messageText}" IS NOT valid. Re-prompting.`);
                         reply = "I didn't recognize that destination city. Please choose from the list or type 'menu' to start over.";
+                        // Re-list destinations (fetch fresh data, not relying on stale session.bookingDetails.origin)
                         const currentOrigin = session.bookingDetails.origin;
                         if (currentOrigin) {
                             const destinations = await Route.distinct('destination', { origin: currentOrigin, isActive: true });
@@ -144,12 +148,14 @@ const conversationService = {
 
                 case 'ask_date':
                     logger.debug(`[Conversation - ask_date] Processing message: "${messageText}"`);
+                    session = await sessionService.getSession(waId); // <<< ENSURE FRESH SESSION
                     const parsedDate = conversationService.parseDateInput(messageText);
                     logger.debug(`[Conversation - ask_date] Parsed date: ${parsedDate ? parsedDate.toISOString() : 'null'}`);
 
-                    if (parsedDate && parsedDate >= new Date(new Date().setHours(0,0,0,0))) {
+                    if (parsedDate && parsedDate >= new Date(new Date().setHours(0,0,0,0))) { // Date must be today or in future
                         await sessionService.updateBookingDetails(waId, { date: parsedDate });
-                        session = await sessionService.getSession(waId); // Fetch updated session for latest bookingDetails
+                        // Re-fetch session to ensure bookingDetails.origin and destination are up-to-date for route lookup
+                        session = await sessionService.getSession(waId); // This refresh is important if 'bookingDetails' was just updated
                         const { origin, destination } = session.bookingDetails;
                         logger.debug(`[Conversation - ask_date] Attempting to find route for Origin: ${origin}, Destination: ${destination}`);
                         const route = await Route.findOne({ origin: origin, destination: destination, isActive: true });
@@ -176,8 +182,8 @@ const conversationService = {
                                 departureOptions += "\nPlease reply with the number of your preferred departure.";
                                 await sessionService.updateSessionContext(waId, { availableDepartures: departures.map(d => d._id.toString()) }); // Store IDs for validation
                                 await sessionService.updateSessionStep(waId, 'ask_departure_choice');
-                                reply = departureOptions;
                                 logger.debug(`[Conversation - ask_date] Departures found, moving to ask_departure_choice.`);
+                                reply = departureOptions;
                             } else {
                                 reply = `Sorry, no available departures found for ${origin} to ${destination} on ${parsedDate.toDateString()}. Please choose another date or type 'reset'.`;
                                 await sessionService.updateSessionStep(waId, 'ask_date');
@@ -196,7 +202,7 @@ const conversationService = {
 
                 case 'ask_departure_choice':
                     logger.debug(`[Conversation - ask_departure_choice] Processing message: "${messageText}"`);
-                    session = await sessionService.getSession(waId); // Refresh session for latest context
+                    session = await sessionService.getSession(waId); // <<< ENSURE FRESH SESSION
                     const availableDepartures = session.context.availableDepartures || [];
                     logger.debug(`[Conversation - ask_departure_choice] Available Departure IDs in session context: ${JSON.stringify(availableDepartures)}`);
 
@@ -230,8 +236,8 @@ const conversationService = {
 
                 case 'ask_passengers':
                     logger.debug(`[Conversation - ask_passengers] Processing message: "${messageText}"`);
+                    session = await sessionService.getSession(waId); // <<< ENSURE FRESH SESSION
                     const numPassengers = parseInt(messageText, 10);
-                    session = await sessionService.getSession(waId); // Refresh session for latest bookingDetails
                     const currentDepartureId = session.bookingDetails.departureId;
                     const departureToBook = await Departure.findById(currentDepartureId);
                     logger.debug(`[Conversation - ask_passengers] Parsed passengers: ${numPassengers}, Departure seats available: ${departureToBook ? departureToBook.availableSeats : 'N/A'}`);
@@ -239,8 +245,9 @@ const conversationService = {
                     if (departureToBook && !isNaN(numPassengers) && numPassengers > 0 && numPassengers <= departureToBook.availableSeats) {
                         logger.debug(`[Conversation - ask_passengers] Valid number of passengers.`);
                         await sessionService.updateBookingDetails(waId, { passengers: numPassengers });
-                        const updatedSession = await sessionService.getSession(waId); // Fetch updated session for review
-                        const { origin, destination, passengers, departureId } = updatedSession.bookingDetails;
+                        // Re-fetch session to ensure bookingDetails are fully updated before review
+                        session = await sessionService.getSession(waId); // This refresh is important
+                        const { origin, destination, passengers, departureId } = session.bookingDetails;
                         const finalDeparture = await Departure.findById(departureId).populate('route').populate('vehicle');
 
                         if (finalDeparture) {
@@ -273,9 +280,9 @@ const conversationService = {
 
                 case 'review_booking':
                     logger.debug(`[Conversation - review_booking] Processing message: "${messageText}"`);
+                    session = await sessionService.getSession(waId); // <<< ENSURE FRESH SESSION
                     if (messageText === 'yes') {
                         logger.debug(`[Conversation - review_booking] User confirmed booking.`);
-                        session = await sessionService.getSession(waId); // Refresh session for final details
                         const { departureId, passengers, totalAmount } = session.bookingDetails;
 
                         if (departureId && passengers && totalAmount) {
@@ -308,7 +315,7 @@ const conversationService = {
 
                     } else if (messageText === 'no') {
                         logger.debug(`[Conversation - review_booking] User cancelled booking.`);
-                        session = await sessionService.resetSession(waId);
+                        session = await sessionService.resetSession(waId); // This returns a new session.
                         reply = "No problem, let's start over. What is your **departure city**?";
                         await sessionService.updateSessionStep(waId, 'ask_origin');
                     } else {
@@ -319,12 +326,14 @@ const conversationService = {
 
                 case 'booking_complete':
                     logger.debug(`[Conversation - booking_complete] Reprompting for new task.`);
+                    // No need to refetch session here, as we are transitioning to a known state.
                     reply = "Your booking is complete! I'm ready for a new task. Say 'menu' to see options.";
                     await sessionService.updateSessionStep(waId, 'main_menu');
                     break;
 
                 case 'main_menu':
                     logger.debug(`[Conversation - main_menu] Displaying main menu.`);
+                    // No need to refetch session here.
                     reply = "How can I help you today?\n\n*1.* 🚌 Book a new trip\n*2.* ℹ️ Check my booking\n*3.* 📞 Contact support";
                     await sessionService.updateSessionStep(waId, 'welcome');
                     break;
@@ -332,6 +341,8 @@ const conversationService = {
                 default:
                     logger.warn(`[Conversation] Unrecognized step '${session.currentStep}'. Resetting to welcome.`);
                     reply = "I'm sorry, I don't understand that. Please type 'menu' to see options.";
+                    // If we don't recognize the step, assume a clean slate and reset.
+                    session = await sessionService.resetSession(waId); // This also updates the session object.
                     await sessionService.updateSessionStep(waId, 'welcome');
                     break;
             }
@@ -429,3 +440,4 @@ const conversationService = {
 };
 
 module.exports = conversationService;
+
