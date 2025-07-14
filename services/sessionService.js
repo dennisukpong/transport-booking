@@ -27,13 +27,24 @@ const sessionService = {
 
             if (currentTime - lastActiveTime > SESSION_TIMEOUT_MS) {
                 // Session timed out, reset it
-                session.currentStep = 'welcome';
-                session.bookingDetails = {};
-                session.context = {};
+                // Using findOneAndUpdate to ensure the reset is atomic and returns the new state
+                session = await Session.findOneAndUpdate( // <<< IMPORTANT: Reassign session here
+                    { waId },
+                    {
+                        $set: {
+                            currentStep: 'welcome',
+                            bookingDetails: {},
+                            context: {},
+                            lastActive: Date.now()
+                        }
+                    },
+                    { new: true, upsert: true } // Returns the updated document, creates if not found
+                );
                 logger.info(`Session timed out for ${waId}. Resetting.`);
+                return session; // Return the newly reset session immediately
             }
         }
-        await session.save(); // Update lastActive timestamp
+        await session.save(); // Update lastActive timestamp on existing or newly created sessions
         return session;
     },
 
@@ -47,12 +58,11 @@ const sessionService = {
         const session = await Session.findOneAndUpdate(
             { waId },
             { $set: { currentStep: newStep, lastActive: Date.now() } },
-            { new: true, upsert: true }
+            { new: true, upsert: true } // IMPORTANT: returns the updated document
         );
         logger.debug(`Session for ${waId} updated to step: ${newStep}.`);
         return session;
     },
-// Corrected helper functions within sessionService:
 
     /**
      * Updates specific booking details in the session.
@@ -61,15 +71,26 @@ const sessionService = {
      * @returns {Promise<object>} The updated session object.
      */
     updateBookingDetails: async (waId, updates) => {
-        const session = await Session.findOne({ waId });
+        // Use $set to update specific fields within the nested bookingDetails object
+        const session = await Session.findOneAndUpdate(
+            { waId },
+            { $set: { "bookingDetails.origin": updates.origin, // Example for specific fields
+                      "bookingDetails.destination": updates.destination,
+                      "bookingDetails.date": updates.date,
+                      "bookingDetails.passengers": updates.passengers,
+                      "bookingDetails.departureId": updates.departureId,
+                      "bookingDetails.fare": updates.fare,
+                      "bookingDetails.totalAmount": updates.totalAmount,
+                      lastActive: Date.now()
+                    }
+            },
+            { new: true, upsert: true } // IMPORTANT: returns the updated document
+        );
         if (!session) {
             logger.error(`Session not found for ${waId} when trying to update booking details.`);
-            return null; // Or throw an error
+        } else {
+            logger.debug(`Booking details for ${waId} updated. Current bookingDetails: ${JSON.stringify(session.bookingDetails)}.`);
         }
-        Object.assign(session.bookingDetails, updates);
-        session.lastActive = Date.now();
-        await session.save();
-        logger.debug(`Booking details for ${waId} updated: ${JSON.stringify(updates)}.`);
         return session;
     },
 
@@ -80,19 +101,24 @@ const sessionService = {
      * @returns {Promise<object>} The updated session object.
      */
     updateSessionContext: async (waId, updates) => {
-        const session = await Session.findOne({ waId });
+        // To update context fields dynamically, use dot notation or Object.keys
+        const updateDoc = { lastActive: Date.now() };
+        for (const key in updates) {
+            updateDoc[`context.${key}`] = updates[key];
+        }
+
+        const session = await Session.findOneAndUpdate(
+            { waId },
+            { $set: updateDoc }, // $set is crucial for updating nested objects correctly
+            { new: true, upsert: true } // IMPORTANT: returns the updated document
+        );
         if (!session) {
             logger.error(`Session not found for ${waId} when trying to update session context.`);
-            return null; // Or throw an error
+        } else {
+            logger.debug(`Session context for ${waId} updated. Current context: ${JSON.stringify(session.context)}.`);
         }
-        Object.assign(session.context, updates);
-        session.lastActive = Date.now();
-        await session.save();
-        logger.debug(`Session context for ${waId} updated: ${JSON.stringify(updates)}.`);
         return session;
     },
-
- 
 
     /**
      * Resets a user's session to the welcome state.
@@ -103,7 +129,7 @@ const sessionService = {
         const session = await Session.findOneAndUpdate(
             { waId },
             { $set: { currentStep: 'welcome', bookingDetails: {}, context: {}, lastActive: Date.now() } },
-            { new: true, upsert: true }
+            { new: true, upsert: true } // IMPORTANT: returns the updated document
         );
         logger.info(`Session for ${waId} reset.`);
         return session;
