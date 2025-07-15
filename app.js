@@ -4,6 +4,11 @@ const bodyParser = require('body-parser');
 const config = require('./config');
 const connectDB = require('./config/db');
 const logger = require('./utils/logger');
+require('./models/Route');     // Make sure Route schema is registered
+require('./models/Vehicle');   // <--- ADD THIS LINE if it's missing or commented out
+require('./models/Departure'); // Make sure Departure schema is registered
+require('./models/Session');   // Make sure Session schema is registered
+require('./models/Booking');   // Make sure 
 const webhookRoutes = require('./routes/webhookRoutes'); // Will create this next
 
 //const errorHandler = require('./middlewares/errorHandler'); // Will create this later
