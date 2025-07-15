@@ -146,6 +146,97 @@ const conversationService = {
                     }
                     break;
 
+ // services/conversationService.js
+// ...
+                case 'ask_date':
+                    logger.debug(`[Conversation - ask_date] Processing message: "${messageText}"`);
+                    session = await sessionService.getSession(waId);
+                    const parsedDate = conversationService.parseDateInput(messageText);
+                    logger.debug(`[Conversation - ask_date] Parsed date (from user input): ${parsedDate ? parsedDate.toISOString() : 'null'}`);
+
+                    if (parsedDate && parsedDate >= new Date(new Date().setHours(0,0,0,0))) { // Date must be today or in future
+                        await sessionService.updateBookingDetails(waId, { date: parsedDate });
+                        session = await sessionService.getSession(waId);
+                        const { origin, destination } = session.bookingDetails;
+                        logger.debug(`[Conversation - ask_date] Attempting to find route for Origin: ${origin}, Destination: ${destination}`);
+                        const route = await Route.findOne({ origin: origin, destination: destination, isActive: true });
+
+                        if (route) {
+                            logger.debug(`[Conversation - ask_date] Route found: ${route._id}. Searching for departures.`);
+
+                            // --- CRITICAL CHANGE START ---
+
+                            // 1. Convert the parsedDate (which is UTC midnight of the chosen day)
+                            //    to represent the *start of the day in WAT*.
+                            //    If parsedDate is 2025-07-17T00:00:00.000Z (UTC),
+                            //    this is 2025-07-17 01:00:00 WAT.
+                            //    We want to find departures for 2025-07-17 00:00:00 WAT.
+                            //    00:00:00 WAT is 23:00:00 UTC on the *previous* day.
+
+                            // First, create a new Date object representing the user's *intended date* in WAT,
+                            // regardless of the server's timezone.
+                            // We need to construct a date as if it were 00:00:00 WAT for the chosen day.
+                            // Since `parsedDate` is already a Date object (e.g. 2025-07-17T00:00:00.000Z),
+                            // use its year, month, and day to create the *WAT* day boundaries, then convert to UTC.
+
+                            const queryDayYear = parsedDate.getUTCFullYear();
+                            const queryDayMonth = parsedDate.getUTCMonth();
+                            const queryDayDate = parsedDate.getUTCDate();
+
+                            // Start of the user's selected day, interpreted as WAT (UTC+1)
+                            // Create a date object that represents 00:00:00 WAT for the given date.
+                            // If Render is UTC, `new Date(Y, M, D, H, Min, S)` creates a UTC date.
+                            // So, to get 00:00 WAT (which is 23:00 UTC of previous day),
+                            // we create UTC date for 23:00 of (D-1).
+
+                            const startOfDayWAT_UTC = new Date(Date.UTC(queryDayYear, queryDayMonth, queryDayDate - 1, 23, 0, 0)); // 23:00 UTC for previous day = 00:00 WAT for selected day
+                            const endOfDayWAT_UTC = new Date(Date.UTC(queryDayYear, queryDayMonth, queryDayDate, 22, 59, 59, 999)); // 22:59:59 UTC for selected day = 23:59:59 WAT for selected day
+
+                            logger.debug(`[Conversation - ask_date] Query Range for Departures (UTC): $gte ${startOfDayWAT_UTC.toISOString()}, $lt ${endOfDayWAT_UTC.toISOString()}`);
+                            // --- CRITICAL CHANGE END ---
+
+                            const departures = await Departure.find({
+                                route: route._id,
+                                departureTime: {
+                                    $gte: startOfDayWAT_UTC,
+                                    $lt: endOfDayWAT_UTC // Use $lt for the strict range up to the end of the day
+                                },
+                                availableSeats: { $gt: 0 },
+                                status: 'scheduled'
+                            }).populate('vehicle').sort('departureTime');
+                            logger.debug(`[Conversation - ask_date] Found ${departures.length} departures.`);
+
+                            if (departures && departures.length > 0) {
+                                let departureOptions = `Great! Here are the available departures for ${origin} to ${destination} on ${parsedDate.toDateString()}:\n\n`;
+                                departures.forEach((dep, i) => {
+                                    // Make sure to display time in WAT.
+                                    // `toLocaleTimeString` without a specific timezone option will use server's local (UTC on Render).
+                                    // To ensure WAT display:
+                                    const departureTime = new Date(dep.departureTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' });
+                                    departureOptions += `*${i + 1}.* ${dep.vehicle.name} at ${departureTime} - Fare: NGN${dep.fare.toLocaleString()} - Seats: ${dep.availableSeats}\n`;
+                                });
+                                departureOptions += "\nPlease reply with the number of your preferred departure.";
+                                await sessionService.updateSessionContext(waId, { availableDepartures: departures.map(d => d._id.toString()) });
+                                await sessionService.updateSessionStep(waId, 'ask_departure_choice');
+                                logger.debug(`[Conversation - ask_date] Departures found, moving to ask_departure_choice.`);
+                                reply = departureOptions;
+                            } else {
+                                reply = `Sorry, no available departures found for ${origin} to ${destination} on ${parsedDate.toDateString()}. Please choose another date or type 'reset'.`;
+                                await sessionService.updateSessionStep(waId, 'ask_date');
+                                logger.debug(`[Conversation - ask_date] No departures found for chosen date.`);
+                            }
+                        } else {
+                            reply = "Internal error: Route not found for selected origin and destination. Please type 'reset' to start over.";
+                            await sessionService.resetSession(waId);
+                            logger.error(`[Conversation - ask_date] Route not found after origin/destination selected. Resetting session.`);
+                        }
+                    } else {
+                        reply = "I couldn't understand that date or it's in the past. Please provide the date in format YYYY-MM-DD (e.g., 2025-07-20), 'tomorrow', or 'next [day of week]'.";
+                        logger.debug(`[Conversation - ask_date] Invalid date input: "${messageText}".`);
+                    }
+                    break;
+// ... rest of the code             
+            /*  
                 case 'ask_date':
                     logger.debug(`[Conversation - ask_date] Processing message: "${messageText}"`);
                     session = await sessionService.getSession(waId); // <<< ENSURE FRESH SESSION
@@ -199,6 +290,7 @@ const conversationService = {
                         logger.debug(`[Conversation - ask_date] Invalid date input: "${messageText}".`);
                     }
                     break;
+                    */
 
                 case 'ask_departure_choice':
                     logger.debug(`[Conversation - ask_departure_choice] Processing message: "${messageText}"`);
