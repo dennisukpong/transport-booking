@@ -15,6 +15,7 @@ const sessionSchema = new mongoose.Schema({
             'ask_origin',           // Prompting for departure city
             'ask_destination',      // Prompting for destination city
             'ask_date',             // Prompting for travel date
+            'ask_departure_choice', // <--- ADD THIS NEW STEP HERE!
             'ask_passengers',       // Prompting for number of passengers
             'review_booking',       // User reviewing gathered details
             'awaiting_payment',     // Booking confirmed, waiting for payment (future step)
@@ -29,6 +30,8 @@ const sessionSchema = new mongoose.Schema({
         destination: { type: String, trim: true, default: null },
         date: { type: Date, default: null },
         passengers: { type: Number, default: null },
+        departureId: { type: mongoose.Schema.Types.ObjectId, default: null }, // Add this if you store it here
+        fare: { type: Number, default: null }, // Add this if you store it here
         // Add more fields as needed, e.g., tripId, vehicleType, price, etc.
         // For MVP, keep it simple.
     },
