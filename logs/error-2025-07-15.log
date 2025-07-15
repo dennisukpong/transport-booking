@@ -1,0 +1,215 @@
+{"0":"c","1":"o","10":"O","11":"N","12":"N","13":"R","14":"E","15":"F","16":"U","17":"S","18":"E","19":"D","2":"n","20":" ","21":"1","22":"2","23":"7","24":".","25":"0","26":".","27":"0","28":".","29":"1","3":"n","30":":","31":"2","32":"7","33":"0","34":"1","35":"7","4":"e","5":"c","6":"t","7":" ","8":"E","9":"C","cause":{"commonWireVersion":0,"compatible":true,"heartbeatFrequencyMS":10000,"localThresholdMS":15,"logicalSessionTimeoutMinutes":null,"maxElectionId":null,"maxSetVersion":null,"servers":{"localhost:27017":{"$clusterTime":null,"address":"localhost:27017","arbiters":[],"electionId":null,"error":{"beforeHandshake":false,"errorLabelSet":{}},"hosts":[],"iscryptd":false,"lastUpdateTime":9424175,"lastWriteDate":0,"logicalSessionTimeoutMinutes":null,"maxBsonObjectSize":null,"maxMessageSizeBytes":null,"maxWireVersion":0,"maxWriteBatchSize":null,"me":null,"minRoundTripTime":0,"minWireVersion":0,"passives":[],"primary":null,"roundTripTime":-1,"setName":null,"setVersion":null,"tags":{},"topologyVersion":null,"type":"Unknown"}},"setName":null,"stale":false,"type":"Unknown"},"errorLabelSet":{},"level":"error","message":"connect ECONNREFUSED 127.0.0.1:27017","reason":{"commonWireVersion":0,"compatible":true,"heartbeatFrequencyMS":10000,"localThresholdMS":15,"logicalSessionTimeoutMinutes":null,"maxElectionId":null,"maxSetVersion":null,"servers":{"localhost:27017":{"$clusterTime":null,"address":"localhost:27017","arbiters":[],"electionId":null,"error":{"beforeHandshake":false,"errorLabelSet":{}},"hosts":[],"iscryptd":false,"lastUpdateTime":9424175,"lastWriteDate":0,"logicalSessionTimeoutMinutes":null,"maxBsonObjectSize":null,"maxMessageSizeBytes":null,"maxWireVersion":0,"maxWriteBatchSize":null,"me":null,"minRoundTripTime":0,"minWireVersion":0,"passives":[],"primary":null,"roundTripTime":-1,"setName":null,"setVersion":null,"tags":{},"topologyVersion":null,"type":"Unknown"}},"setName":null,"stale":false,"type":"Unknown"},"timestamp":"2025-07-15 06:11:19"}
+{"cause":{"commonWireVersion":0,"compatible":true,"heartbeatFrequencyMS":10000,"localThresholdMS":15,"logicalSessionTimeoutMinutes":null,"maxElectionId":null,"maxSetVersion":null,"servers":{"localhost:27017":{"$clusterTime":null,"address":"localhost:27017","arbiters":[],"electionId":null,"error":{"beforeHandshake":false,"errorLabelSet":{}},"hosts":[],"iscryptd":false,"lastUpdateTime":10433129,"lastWriteDate":0,"logicalSessionTimeoutMinutes":null,"maxBsonObjectSize":null,"maxMessageSizeBytes":null,"maxWireVersion":0,"maxWriteBatchSize":null,"me":null,"minRoundTripTime":0,"minWireVersion":0,"passives":[],"primary":null,"roundTripTime":-1,"setName":null,"setVersion":null,"tags":{},"topologyVersion":null,"type":"Unknown"}},"setName":null,"stale":false,"type":"Unknown"},"errorLabelSet":{},"level":"error","message":"connect ECONNREFUSED 127.0.0.1:27017","reason":{"commonWireVersion":0,"compatible":true,"heartbeatFrequencyMS":10000,"localThresholdMS":15,"logicalSessionTimeoutMinutes":null,"maxElectionId":null,"maxSetVersion":null,"servers":{"localhost:27017":{"$clusterTime":null,"address":"localhost:27017","arbiters":[],"electionId":null,"error":{"beforeHandshake":false,"errorLabelSet":{}},"hosts":[],"iscryptd":false,"lastUpdateTime":10433129,"lastWriteDate":0,"logicalSessionTimeoutMinutes":null,"maxBsonObjectSize":null,"maxMessageSizeBytes":null,"maxWireVersion":0,"maxWriteBatchSize":null,"me":null,"minRoundTripTime":0,"minWireVersion":0,"passives":[],"primary":null,"roundTripTime":-1,"setName":null,"setVersion":null,"tags":{},"topologyVersion":null,"type":"Unknown"}},"setName":null,"stale":false,"type":"Unknown"},"stack":"MongooseServerSelectionError: connect ECONNREFUSED 127.0.0.1:27017\n    at _handleConnectionErrors (/data/data/com.termux/files/home/projects/whatsapp-transport-booking/node_modules/mongoose/lib/connection.js:1165:11)\n    at NativeConnection.openUri (/data/data/com.termux/files/home/projects/whatsapp-transport-booking/node_modules/mongoose/lib/connection.js:1096:11)\n    at async seedData (/data/data/com.termux/files/home/projects/whatsapp-transport-booking/scripts/seed.js:26:9)","timestamp":"2025-07-15 06:28:08"}
+{"_message":"Route validation failed","errors":{"basePrice":{"kind":"required","message":"Path `basePrice` is required.","name":"ValidatorError","path":"basePrice","properties":{"message":"Path `basePrice` is required.","path":"basePrice","type":"required"}}},"level":"error","message":"Error during seeding: Route validation failed: basePrice: Path `basePrice` is required.","stack":"ValidationError: Route validation failed: basePrice: Path `basePrice` is required.\n    at Document.invalidate (/data/data/com.termux/files/home/projects/whatsapp-transport-booking/node_modules/mongoose/lib/document.js:3354:32)\n    at /data/data/com.termux/files/home/projects/whatsapp-transport-booking/node_modules/mongoose/lib/document.js:3115:17\n    at /data/data/com.termux/files/home/projects/whatsapp-transport-booking/node_modules/mongoose/lib/schemaType.js:1410:9\n    at process.processTicksAndRejections (node:internal/process/task_queues:85:11)","timestamp":"2025-07-15 06:40:10"}
+{"_message":"Departure validation failed","errors":{"fare":{"kind":"Number","message":"Cast to Number failed for value \"NaN\" (type number) at path \"fare\"","name":"CastError","path":"fare","reason":{"actual":false,"code":"ERR_ASSERTION","expected":true,"generatedMessage":true,"operator":"=="},"stringValue":"\"NaN\"","value":null,"valueType":"number"}},"level":"error","message":"Error during seeding: Departure validation failed: fare: Cast to Number failed for value \"NaN\" (type number) at path \"fare\"","stack":"ValidationError: Departure validation failed: fare: Cast to Number failed for value \"NaN\" (type number) at path \"fare\"\n    at Document.invalidate (/data/data/com.termux/files/home/projects/whatsapp-transport-booking/node_modules/mongoose/lib/document.js:3354:32)\n    at model.$set (/data/data/com.termux/files/home/projects/whatsapp-transport-booking/node_modules/mongoose/lib/document.js:1480:12)\n    at model.$set (/data/data/com.termux/files/home/projects/whatsapp-transport-booking/node_modules/mongoose/lib/document.js:1132:16)\n    at model.Document (/data/data/com.termux/files/home/projects/whatsapp-transport-booking/node_modules/mongoose/lib/document.js:178:12)\n    at model.Model (/data/data/com.termux/files/home/projects/whatsapp-transport-booking/node_modules/mongoose/lib/model.js:127:12)\n    at new model (/data/data/com.termux/files/home/projects/whatsapp-transport-booking/node_modules/mongoose/lib/model.js:4837:15)\n    at Array.<anonymous> (/data/data/com.termux/files/home/projects/whatsapp-transport-booking/node_modules/mongoose/lib/model.js:3059:17)\n    at _start (/data/data/com.termux/files/home/projects/whatsapp-transport-booking/node_modules/mongoose/lib/helpers/parallelLimit.js:27:37)\n    at parallelLimit (/data/data/com.termux/files/home/projects/whatsapp-transport-booking/node_modules/mongoose/lib/helpers/parallelLimit.js:23:5)\n    at Model.$__insertMany (/data/data/com.termux/files/home/projects/whatsapp-transport-booking/node_modules/mongoose/lib/model.js:3090:3)","timestamp":"2025-07-15 07:50:45"}
+{"level":"error","message":"Invalid distanceKm for route ABUJA to LAGOS. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:38"}
+{"level":"error","message":"Invalid distanceKm for route ABUJA to UYO. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:38"}
+{"level":"error","message":"Invalid distanceKm for route LAGOS to ABUJA. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:38"}
+{"level":"error","message":"Invalid distanceKm for route UYO to LAGOS. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:38"}
+{"level":"error","message":"Invalid distanceKm for route LAGOS to UYO. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:38"}
+{"level":"error","message":"Invalid distanceKm for route ABUJA to LAGOS. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:38"}
+{"level":"error","message":"Invalid distanceKm for route ABUJA to UYO. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:38"}
+{"level":"error","message":"Invalid distanceKm for route LAGOS to ABUJA. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:38"}
+{"level":"error","message":"Invalid distanceKm for route UYO to LAGOS. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:38"}
+{"level":"error","message":"Invalid distanceKm for route LAGOS to UYO. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:38"}
+{"level":"error","message":"Invalid distanceKm for route ABUJA to LAGOS. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:38"}
+{"level":"error","message":"Invalid distanceKm for route ABUJA to UYO. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:38"}
+{"level":"error","message":"Invalid distanceKm for route LAGOS to ABUJA. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:38"}
+{"level":"error","message":"Invalid distanceKm for route UYO to LAGOS. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:38"}
+{"level":"error","message":"Invalid distanceKm for route LAGOS to UYO. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:38"}
+{"level":"error","message":"Invalid distanceKm for route ABUJA to LAGOS. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route ABUJA to UYO. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route LAGOS to ABUJA. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route UYO to LAGOS. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route LAGOS to UYO. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route ABUJA to LAGOS. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route ABUJA to UYO. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route LAGOS to ABUJA. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route UYO to LAGOS. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route LAGOS to UYO. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route ABUJA to LAGOS. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route ABUJA to UYO. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route LAGOS to ABUJA. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route UYO to LAGOS. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route LAGOS to UYO. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route ABUJA to LAGOS. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route ABUJA to UYO. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route LAGOS to ABUJA. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route UYO to LAGOS. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route LAGOS to UYO. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route ABUJA to LAGOS. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route ABUJA to UYO. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route LAGOS to ABUJA. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route UYO to LAGOS. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route LAGOS to UYO. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route ABUJA to LAGOS. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route ABUJA to UYO. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route LAGOS to ABUJA. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route UYO to LAGOS. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route LAGOS to UYO. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route ABUJA to LAGOS. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route ABUJA to UYO. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route LAGOS to ABUJA. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route UYO to LAGOS. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route LAGOS to UYO. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route ABUJA to LAGOS. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route ABUJA to UYO. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route LAGOS to ABUJA. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route UYO to LAGOS. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route LAGOS to UYO. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route ABUJA to LAGOS. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route ABUJA to UYO. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route LAGOS to ABUJA. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route UYO to LAGOS. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route LAGOS to UYO. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route ABUJA to LAGOS. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route ABUJA to UYO. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route LAGOS to ABUJA. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route UYO to LAGOS. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route LAGOS to UYO. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route ABUJA to LAGOS. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route ABUJA to UYO. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route LAGOS to ABUJA. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route UYO to LAGOS. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"Invalid distanceKm for route LAGOS to UYO. Skipping departure creation for this route on this date.","timestamp":"2025-07-15 08:01:39"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to ABUJA. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route UYO to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to ABUJA. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route UYO to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to ABUJA. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route UYO to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to ABUJA. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route UYO to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to ABUJA. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route UYO to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to ABUJA. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route UYO to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to ABUJA. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route UYO to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to ABUJA. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route UYO to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to ABUJA. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route UYO to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to ABUJA. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route UYO to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to ABUJA. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route UYO to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to ABUJA. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route UYO to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to ABUJA. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route UYO to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to ABUJA. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route UYO to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:12:17"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to ABUJA. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route UYO to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to ABUJA. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route UYO to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to ABUJA. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route UYO to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to ABUJA. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route UYO to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to ABUJA. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route UYO to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to ABUJA. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route UYO to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to ABUJA. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route UYO to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to ABUJA. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route UYO to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to ABUJA. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route UYO to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to ABUJA. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route UYO to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to ABUJA. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route UYO to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to ABUJA. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route UYO to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to ABUJA. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route UYO to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route ABUJA to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to ABUJA. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route UYO to LAGOS. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"level":"error","message":"(Still) Invalid distanceKm for route LAGOS to UYO. This should not happen after .toObject().","timestamp":"2025-07-15 08:20:12"}
+{"_message":"Departure validation failed","errors":{"departureTime":{"kind":"required","message":"Path `departureTime` is required.","name":"ValidatorError","path":"departureTime","properties":{"message":"Path `departureTime` is required.","path":"departureTime","type":"required"}}},"level":"error","message":"Error during seeding: Departure validation failed: departureTime: Path `departureTime` is required.","stack":"ValidationError: Departure validation failed: departureTime: Path `departureTime` is required.\n    at Document.invalidate (/data/data/com.termux/files/home/projects/whatsapp-transport-booking/node_modules/mongoose/lib/document.js:3354:32)\n    at /data/data/com.termux/files/home/projects/whatsapp-transport-booking/node_modules/mongoose/lib/document.js:3115:17\n    at /data/data/com.termux/files/home/projects/whatsapp-transport-booking/node_modules/mongoose/lib/schemaType.js:1410:9\n    at process.processTicksAndRejections (node:internal/process/task_queues:85:11)","timestamp":"2025-07-15 08:28:16"}
