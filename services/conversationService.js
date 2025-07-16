@@ -4,7 +4,8 @@ const whatsappService = require('./whatsappService');
 const logger = require('../utils/logger');
 const Route = require('../models/Route');
 const Departure = require('../models/Departure');
-const Booking = require('../models/Booking'); // Ensure Booking model is imported for final step
+const Booking = require('../models/Booking'); // Ensure Booking model is imported
+const mongoose = require('mongoose'); // Import mongoose to use ObjectId for sessionId
 
 // Helper for sending messages (can use Twilio TwiML or direct WhatsApp API)
 const sendReply = async (waId, message, twiml) => {
@@ -90,9 +91,9 @@ const conversationService = {
             const year = parseInt(parts[0], 10);
             const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
             const day = parseInt(parts[2], 10);
-            
+
             // Create date assuming UTC to avoid local timezone shifts during parsing
-            parsedDate = new Date(Date.UTC(year, month, day)); 
+            parsedDate = new Date(Date.UTC(year, month, day));
 
             // Validate if the date parts match after creating the Date object (handles invalid dates like Feb 30)
             if (parsedDate.getUTCFullYear() !== year || parsedDate.getUTCMonth() !== month || parsedDate.getUTCDate() !== day) {
@@ -416,8 +417,8 @@ const conversationService = {
                     logger.debug(`[Conversation - review_booking] Processing message: "${messageText}"`);
                     session = await sessionService.getSession(waId); // Get freshest session for final confirmation
 
-                    // Destructure all expected booking details to ensure they are available for booking creation
-                    const { origin: finalOrigin, destination: finalDestination, date: finalDate,
+                    // Destructure all expected booking details
+                    const { origin: finalOrigin, destination: finalDestination, date: finalDate, // finalDate is travelDate
                             departureId: finalDepartureId, passengers: finalPassengers,
                             fare: finalFare, totalAmount: finalTotalAmount } = session.bookingDetails;
 
@@ -443,27 +444,33 @@ const conversationService = {
                                 break;
                             }
 
-                            // Create the new Booking document
+                            // --- CRITICAL FIXES FOR BOOKING OBJECT CREATION ---
                             const newBooking = new Booking({
-                                waId: waId,
-                                route: finalDeparture.route._id,
+                                userId: waId, // Using waId as userId as per Booking schema
+                                sessionId: session._id, // Use the actual Mongoose _id of the session document
                                 departure: finalDeparture._id,
-                                bookingDate: new Date(), // Timestamp when the booking is confirmed
-                                travelDate: finalDate,   // The actual date of travel
                                 passengers: finalPassengers,
-                                totalFare: finalTotalAmount, // Use the pre-calculated total amount
-                                status: 'confirmed', // Or 'pending_payment' if you add payment integration
+                                totalAmount: finalTotalAmount, // Corrected field name to match Booking schema
+                                // bookingReference is handled by pre('save') hook in Booking.js
+                                // status defaults to 'pending' as per Booking.js, unless we set 'confirmed' here
+                                status: 'confirmed', // Explicitly setting status as confirmed on user confirmation
+                                // paymentStatus defaults to 'pending' as per Booking.js
+                                // createdAt defaults to Date.now as per Booking.js
                             });
 
+                            // --- Debugging the booking object before save ---
+                            logger.debug(`[Conversation - review_booking] Attempting to save new booking: ${JSON.stringify(newBooking.toObject())}`);
+                            // --- END DEBUGGING ---
+
                             try {
-                                await newBooking.save(); // Save the new booking
+                                await newBooking.save(); // Save the new booking (pre('save') hook for bookingReference will run)
                                 // Decrement available seats on the departure
                                 finalDeparture.availableSeats -= finalPassengers;
                                 await finalDeparture.save(); // Save the updated departure
 
-                                reply = `🎉 Booking confirmed! Your reference number is *${newBooking._id}*. Total: NGN${newBooking.totalFare.toLocaleString()}.\n\nThank you for choosing us!`;
+                                reply = `🎉 Booking confirmed! Your reference number is *${newBooking.bookingReference}*. Total: NGN${newBooking.totalAmount.toLocaleString()}.\n\nThank you for choosing us!`;
                                 await sessionService.resetSession(waId); // Reset session after successful booking
-                                logger.info(`[Conversation - review_booking] Booking ${newBooking._id} created and seats updated. Final message: "${reply}"`);
+                                logger.info(`[Conversation - review_booking] Booking ${newBooking._id} (Ref: ${newBooking.bookingReference}) created and seats updated. Final message: "${reply}"`);
                             } catch (bookingError) {
                                 logger.error(`[Conversation - review_booking] Error saving booking or updating departure: ${bookingError.message}`);
                                 reply = "Sorry, there was an error finalizing your booking. Please try again or type 'reset'.";
