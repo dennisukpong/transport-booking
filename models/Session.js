@@ -6,22 +6,22 @@ const sessionSchema = new mongoose.Schema({
         type: String,
         unique: true,
         required: true,
-        index: true // Add index for faster lookup
+        index: true
     },
     currentStep: {
         type: String,
         enum: [
-            'welcome',              // Initial state
-            'ask_origin',           // Prompting for departure city
-            'ask_destination',      // Prompting for destination city
-            'ask_date',             // Prompting for travel date
-            'ask_departure_choice', // <--- ADD THIS NEW STEP HERE!
-            'ask_passengers',       // Prompting for number of passengers
-            'review_booking',       // User reviewing gathered details
-            'awaiting_payment',     // Booking confirmed, waiting for payment (future step)
-            'booking_complete',     // Booking finalized
-            'main_menu',            // For returning to a menu after a flow
-            'inactive'              // Session ended or timed out
+            'welcome',
+            'ask_origin',
+            'ask_destination',
+            'ask_date',
+            'ask_departure_choice', // Ensure this is present
+            'ask_passengers',
+            'review_booking',
+            'awaiting_payment',
+            'booking_complete',
+            'main_menu',
+            'inactive'
         ],
         default: 'welcome'
     },
@@ -30,19 +30,18 @@ const sessionSchema = new mongoose.Schema({
         destination: { type: String, trim: true, default: null },
         date: { type: Date, default: null },
         passengers: { type: Number, default: null },
-        departureId: { type: mongoose.Schema.Types.ObjectId, default: null }, // Add this if you store it here
-        fare: { type: Number, default: null }, // Add this if you store it here
-        // Add more fields as needed, e.g., tripId, vehicleType, price, etc.
-        // For MVP, keep it simple.
+        departureId: { type: mongoose.Schema.Types.ObjectId, default: null },
+        fare: { type: Number, default: null },
+        totalAmount: { type: Number, default: null }, // <--- ADD THIS LINE!
     },
-    context: { // For storing temporary conversational context (e.g., last invalid input)
-        type: mongoose.Schema.Types.Mixed, // Allows flexible data types
+    context: {
+        type: mongoose.Schema.Types.Mixed,
         default: {}
     },
     lastActive: {
         type: Date,
         default: Date.now,
-        expires: '2h' // Sessions expire after 2 hours of inactivity (adjust as needed)
+        expires: '2h'
     },
     createdAt: {
         type: Date,
@@ -50,7 +49,6 @@ const sessionSchema = new mongoose.Schema({
     }
 });
 
-// Update lastActive on every save
 sessionSchema.pre('save', function(next) {
     this.lastActive = Date.now();
     next();
