@@ -1,4 +1,3 @@
-
 // services/conversationService.js
 const sessionService = require('./sessionService');
 const whatsappService = require('./whatsappService');
@@ -17,6 +16,100 @@ const sendReply = async (waId, message, twiml) => {
 };
 
 const conversationService = {
+    /**
+     * Helper to validate user choice (number or name) against a list of options.
+     * @param {string} input The user's message text.
+     * @param {string[]} options An array of valid string options (e.g., city names).
+     * @returns {string|null} The chosen option (normalized) or null if invalid.
+     */
+    validateChoice: (input, options) => {
+        const normalizedInput = input.trim().toLowerCase();
+
+        // Try to match by number
+        const chosenIndex = parseInt(normalizedInput, 10) - 1;
+        if (!isNaN(chosenIndex) && chosenIndex >= 0 && chosenIndex < options.length) {
+            return options[chosenIndex]; // Return the original case from options
+        }
+
+        // Try to match by name (case-insensitive)
+        const matchedOption = options.find(option => option.toLowerCase() === normalizedInput);
+        if (matchedOption) {
+            return matchedOption; // Return the original case from options
+        }
+
+        return null;
+    },
+
+    /**
+     * Helper to parse date input from user (YYYY-MM-DD, tomorrow, next Monday etc.)
+     * @param {string} input The user's date message text.
+     * @returns {Date|null} Parsed Date object (set to midnight UTC) or null if invalid.
+     */
+    parseDateInput: (input) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Set to midnight local time for comparison
+
+        let parsedDate = null;
+        const normalizedInput = input.trim().toLowerCase();
+
+        logger.debug(`[parseDateInput] Parsing input: "${input}"`);
+
+        // Handle 'today'
+        if (normalizedInput === 'today') {
+            parsedDate = new Date(today); // Clone today
+            logger.debug(`[parseDateInput] Parsed as 'today': ${parsedDate.toISOString()}`);
+        }
+        // Handle 'tomorrow'
+        else if (normalizedInput === 'tomorrow') {
+            parsedDate = new Date(today);
+            parsedDate.setDate(today.getDate() + 1); // Add one day
+            logger.debug(`[parseDateInput] Parsed as 'tomorrow': ${parsedDate.toISOString()}`);
+        }
+        // Handle 'next [day of week]' (e.g., 'next monday')
+        else if (normalizedInput.startsWith('next ')) {
+            const dayOfWeekStr = normalizedInput.substring(5);
+            const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            const dayIndex = days.indexOf(dayOfWeekStr);
+
+            if (dayIndex !== -1) {
+                parsedDate = new Date(today);
+                const currentDayIndex = today.getDay(); // 0 for Sunday, 1 for Monday...
+                let daysToAdd = dayIndex - currentDayIndex;
+                if (daysToAdd <= 0) { // If it's today or a past day this week, go to next week
+                    daysToAdd += 7;
+                }
+                parsedDate.setDate(today.getDate() + daysToAdd);
+                logger.debug(`[parseDateInput] Parsed as 'next ${dayOfWeekStr}': ${parsedDate.toISOString()}`);
+            }
+        }
+        // Handle YYYY-MM-DD format
+        else if (/^\d{4}-\d{2}-\d{2}$/.test(normalizedInput)) {
+            const parts = normalizedInput.split('-');
+            const year = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
+            const day = parseInt(parts[2], 10);
+            parsedDate = new Date(year, month, day); // This creates a date in local timezone
+
+            // Check for valid date parts and adjust to UTC midnight
+            if (parsedDate.getFullYear() === year && parsedDate.getMonth() === month && parsedDate.getDate() === day) {
+                // Set to midnight UTC for consistent storage and query
+                parsedDate.setUTCHours(0, 0, 0, 0);
+                logger.debug(`[parseDateInput] Parsed as YYYY-MM-DD: ${parsedDate.toISOString()}`);
+            } else {
+                parsedDate = null; // Invalid date (e.g., 2023-02-30)
+            }
+        }
+
+        // Final check: ensure the parsed date is not in the past relative to today (midnight local)
+        if (parsedDate && parsedDate.getTime() < today.getTime()) {
+            logger.debug(`[parseDateInput] Parsed date ${parsedDate.toISOString()} is in the past, returning null.`);
+            return null;
+        }
+
+        logger.debug(`[parseDateInput] Final parsed date result: ${parsedDate ? parsedDate.toISOString() : 'null'}`);
+        return parsedDate;
+    },
+
     /**
      * Handles an incoming WhatsApp message, processes it based on session state,
      * and generates the appropriate reply.
@@ -42,13 +135,12 @@ const conversationService = {
             logger.debug(`[Conversation] Matched global 'reset' command. Resetting session.`);
             session = await sessionService.resetSession(waId); // This already fetches/creates a fresh session
             reply = "Okay, I've reset our conversation. How can I help you today?\n\n*1.* 🚌 Book a new trip";
-            await sessionService.updateSessionStep(waId, 'welcome');
+            await sessionService.updateSessionStep(waId, 'welcome'); // Reset to welcome, prompt user
         } else {
             // Process message based on current session step
             switch (session.currentStep) {
                 case 'welcome':
                     logger.debug(`[Conversation - welcome] Processing message: "${messageText}"`);
-                    // For this step, 'session' is already the fresh one from the start of the function.
                     if (messageText === '1' || messageText.includes('book')) {
                         logger.debug(`[Conversation - welcome] User wants to book a trip.`);
                         const origins = await Route.distinct('origin', { isActive: true });
@@ -58,20 +150,19 @@ const conversationService = {
                                     "\n\nPlease reply with the city name or number.";
                             await sessionService.updateSessionContext(waId, { availableOrigins: origins });
                             await sessionService.updateSessionStep(waId, 'ask_origin');
-                            // No need to refetch session immediately here, as the next turn will start handleIncomingMessage fresh.
                             logger.debug(`[Conversation - welcome] Origins fetched and stored in context: ${JSON.stringify(origins)}`);
                         } else {
                             reply = "Sorry, no departure locations are currently available. Please try again later.";
-                            await sessionService.updateSessionStep(waId, 'welcome');
+                            await sessionService.updateSessionStep(waId, 'welcome'); // Stay on welcome or reset for no options
                             logger.debug(`[Conversation - welcome] No origins found.`);
                         }
                     } else if (messageText === '2' || messageText.includes('check')) {
                         reply = "Sure, to check your booking, please provide your booking reference number (future step).";
-                        await sessionService.updateSessionStep(waId, 'welcome');
+                        await sessionService.updateSessionStep(waId, 'main_menu'); // Go to main_menu (or keep welcome)
                         logger.debug(`[Conversation - welcome] User wants to check booking.`);
                     } else if (messageText === '3' || messageText.includes('contact')) {
                         reply = "You can contact our support team at +2348012345678 or email support@transport.com.";
-                        await sessionService.updateSessionStep(waId, 'main_menu');
+                        await sessionService.updateSessionStep(waId, 'main_menu'); // Go to main_menu
                         logger.debug(`[Conversation - welcome] User wants to contact support.`);
                     } else {
                         reply = "Please choose an option by typing the number or a keyword (e.g., '1' or 'book').";
@@ -81,12 +172,9 @@ const conversationService = {
 
                 case 'ask_origin':
                     logger.debug(`[Conversation - ask_origin] Processing message: "${messageText}"`);
-                    // Ensure the session is fresh for this turn to access its context
-                    session = await sessionService.getSession(waId); // <<< ENSURE FRESH SESSION
-
+                    session = await sessionService.getSession(waId); // Ensure fresh session
                     const availableOrigins = session.context.availableOrigins || [];
                     logger.debug(`[Conversation - ask_origin] Available Origins in session context: ${JSON.stringify(availableOrigins)}`);
-                    logger.debug(`[Conversation - ask_origin] Calling validateChoice with input: "${messageText}" and options: ${JSON.stringify(availableOrigins)}`);
 
                     const chosenOrigin = conversationService.validateChoice(messageText, availableOrigins);
                     logger.debug(`[Conversation - ask_origin] validateChoice returned: "${chosenOrigin}"`);
@@ -94,7 +182,9 @@ const conversationService = {
                     if (chosenOrigin) {
                         logger.debug(`[Conversation - ask_origin] Chosen origin "${chosenOrigin}" IS valid.`);
                         await sessionService.updateBookingDetails(waId, { origin: chosenOrigin.toUpperCase() });
-                        const destinations = await Route.distinct('destination', { origin: chosenOrigin.toUpperCase(), isActive: true });
+                        // CRITICAL: Refresh session immediately after update
+                        session = await sessionService.getSession(waId);
+                        const destinations = await Route.distinct('destination', { origin: session.bookingDetails.origin, isActive: true });
                         if (destinations && destinations.length > 0) {
                             reply = `Okay, from ${chosenOrigin}. Where would you like to **go to**?\n\n` +
                                     destinations.map((d, i) => `*${i + 1}.* ${d}`).join('\n') +
@@ -104,13 +194,12 @@ const conversationService = {
                             logger.debug(`[Conversation - ask_origin] Destinations fetched and stored in context: ${JSON.stringify(destinations)}`);
                         } else {
                             reply = `Sorry, no destinations available from ${chosenOrigin}. Please choose a different origin or type 'reset'.`;
-                            await sessionService.resetSession(waId); // Reset to welcome, which fetches new session implicitly
+                            await sessionService.resetSession(waId);
                             logger.warn(`[Conversation - ask_origin] No destinations found for origin ${chosenOrigin}. Resetting session.`);
                         }
                     } else {
                         logger.debug(`[Conversation - ask_origin] Chosen origin "${messageText}" IS NOT valid. Re-prompting.`);
                         reply = "I didn't recognize that departure city. Please choose from the list or type 'menu' to start over.";
-                        // Re-list origins if invalid input (fetch fresh data, not relying on stale session.context)
                         const origins = await Route.distinct('origin', { isActive: true });
                         if (origins && origins.length > 0) {
                             reply += "\n\nAvailable origins:\n" + origins.map((o, i) => `*${i + 1}.* ${o}`).join('\n');
@@ -120,7 +209,7 @@ const conversationService = {
 
                 case 'ask_destination':
                     logger.debug(`[Conversation - ask_destination] Processing message: "${messageText}"`);
-                    session = await sessionService.getSession(waId); // <<< ENSURE FRESH SESSION
+                    session = await sessionService.getSession(waId); // Ensure fresh session
                     const availableDestinations = session.context.availableDestinations || [];
                     logger.debug(`[Conversation - ask_destination] Available Destinations in session context: ${JSON.stringify(availableDestinations)}`);
 
@@ -130,12 +219,13 @@ const conversationService = {
                     if (chosenDestination) {
                         logger.debug(`[Conversation - ask_destination] Chosen destination "${chosenDestination}" IS valid.`);
                         await sessionService.updateBookingDetails(waId, { destination: chosenDestination.toUpperCase() });
+                        // CRITICAL: Refresh session immediately after update
+                        session = await sessionService.getSession(waId);
                         reply = `Got it, to ${chosenDestination}. When would you like to travel? Please provide the **date** (e.g., *YYYY-MM-DD*, *tomorrow*, or *next Monday*).`;
                         await sessionService.updateSessionStep(waId, 'ask_date');
                     } else {
                         logger.debug(`[Conversation - ask_destination] Chosen destination "${messageText}" IS NOT valid. Re-prompting.`);
                         reply = "I didn't recognize that destination city. Please choose from the list or type 'menu' to start over.";
-                        // Re-list destinations (fetch fresh data, not relying on stale session.bookingDetails.origin)
                         const currentOrigin = session.bookingDetails.origin;
                         if (currentOrigin) {
                             const destinations = await Route.distinct('destination', { origin: currentOrigin, isActive: true });
@@ -146,18 +236,16 @@ const conversationService = {
                     }
                     break;
 
-// services/conversationService.js
-// ... (inside case 'ask_date':)
                 case 'ask_date':
                     logger.debug(`[Conversation - ask_date] Processing message: "${messageText}"`);
-                    session = await sessionService.getSession(waId);
+                    session = await sessionService.getSession(waId); // Ensure fresh session
                     const parsedDate = conversationService.parseDateInput(messageText);
                     logger.debug(`[Conversation - ask_date] Parsed date (from user input): ${parsedDate ? parsedDate.toISOString() : 'null'}`);
 
-                    // Validate parsedDate is a valid Date object and not in the past
-                    if (parsedDate && parsedDate instanceof Date && !isNaN(parsedDate.getTime()) && parsedDate >= new Date(new Date().setHours(0, 0, 0, 0))) {
+                    if (parsedDate && parsedDate instanceof Date && !isNaN(parsedDate.getTime()) && parsedDate >= new Date(new Date().setHours(0,0,0,0))) {
                         await sessionService.updateBookingDetails(waId, { date: parsedDate });
-                        session = await sessionService.getSession(waId); // Re-fetch to get updated bookingDetails
+                        // CRITICAL: Refresh session immediately after update
+                        session = await sessionService.getSession(waId);
                         const { origin, destination } = session.bookingDetails;
                         logger.debug(`[Conversation - ask_date] Attempting to find route for Origin: ${origin}, Destination: ${destination}`);
                         const route = await Route.findOne({ origin: origin, destination: destination, isActive: true });
@@ -165,25 +253,22 @@ const conversationService = {
                         if (route) {
                             logger.debug(`[Conversation - ask_date] Route found: ${route._id}. Searching for departures.`);
 
-                            // --- CRITICAL CHANGE START ---
                             // Create a new Date object for the *start* of the selected day in UTC.
-                            // The .setUTCHours(0,0,0,0) will set it to midnight UTC for that specific date.
-                            const startOfSelectedDayUTC = new Date(parsedDate); // Create a copy
+                            const startOfSelectedDayUTC = new Date(parsedDate);
                             startOfSelectedDayUTC.setUTCHours(0, 0, 0, 0);
 
                             // Create a new Date object for the *start* of the *next* day in UTC.
-                            const endOfSelectedDayUTC = new Date(parsedDate); // Create a copy
-                            endOfSelectedDayUTC.setUTCDate(endOfSelectedDayUTC.getUTCDate() + 1); // Increment day by 1
-                            endOfSelectedDayUTC.setUTCHours(0, 0, 0, 0); // Set to midnight UTC of the next day
+                            const endOfSelectedDayUTC = new Date(parsedDate);
+                            endOfSelectedDayUTC.setUTCDate(endOfSelectedDayUTC.getUTCDate() + 1);
+                            endOfSelectedDayUTC.setUTCHours(0, 0, 0, 0);
 
                             logger.debug(`[Conversation - ask_date] Query Range for Departures (UTC): $gte ${startOfSelectedDayUTC.toISOString()}, $lt ${endOfSelectedDayUTC.toISOString()}`);
-                            // --- CRITICAL CHANGE END ---
 
                             const departures = await Departure.find({
                                 route: route._id,
                                 departureTime: {
                                     $gte: startOfSelectedDayUTC,
-                                    $lt: endOfSelectedDayUTC // Query up to (but not including) the start of the next day
+                                    $lt: endOfSelectedDayUTC
                                 },
                                 availableSeats: { $gt: 0 },
                                 status: 'scheduled'
@@ -193,7 +278,6 @@ const conversationService = {
                             if (departures && departures.length > 0) {
                                 let departureOptions = `Great! Here are the available departures for ${origin} to ${destination} on ${parsedDate.toDateString()}:\n\n`;
                                 departures.forEach((dep, i) => {
-                                    // Display time in WAT (Africa/Lagos)
                                     const departureTime = new Date(dep.departureTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' });
                                     departureOptions += `*${i + 1}.* ${dep.vehicle.name} at ${departureTime} - Fare: NGN${dep.fare.toLocaleString()} - Seats: ${dep.availableSeats}\n`;
                                 });
@@ -220,7 +304,7 @@ const conversationService = {
 
                 case 'ask_departure_choice':
                     logger.debug(`[Conversation - ask_departure_choice] Processing message: "${messageText}"`);
-                    session = await sessionService.getSession(waId); // <<< ENSURE FRESH SESSION
+                    session = await sessionService.getSession(waId); // Ensure fresh session
                     const availableDepartures = session.context.availableDepartures || [];
                     logger.debug(`[Conversation - ask_departure_choice] Available Departure IDs in session context: ${JSON.stringify(availableDepartures)}`);
 
@@ -236,9 +320,11 @@ const conversationService = {
                             logger.debug(`[Conversation - ask_departure_choice] Chosen Departure details: ${JSON.stringify(chosenDeparture)}`);
                             await sessionService.updateBookingDetails(waId, {
                                 departureId: chosenDepartureId,
-                                fare: chosenDeparture.fare
+                                fare: chosenDeparture.fare // Store fare in session
                             });
-                            reply = `You've selected the ${chosenDeparture.vehicle.name} departing at ${new Date(chosenDeparture.departureTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.\nHow many **passengers** will there be? (Enter a number)`;
+                            // CRITICAL: Refresh session immediately after update
+                            session = await sessionService.getSession(waId);
+                            reply = `You've selected the ${chosenDeparture.vehicle.name} departing at ${new Date(chosenDeparture.departureTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}.\nHow many **passengers** will there be? (Enter a number)`;
                             await sessionService.updateSessionStep(waId, 'ask_passengers');
                             logger.debug(`[Conversation - ask_departure_choice] Departure selected, moving to ask_passengers.`);
                         } else {
@@ -254,208 +340,142 @@ const conversationService = {
 
                 case 'ask_passengers':
                     logger.debug(`[Conversation - ask_passengers] Processing message: "${messageText}"`);
-                    session = await sessionService.getSession(waId); // <<< ENSURE FRESH SESSION
+                    session = await sessionService.getSession(waId); // Get initial fresh session for this step
                     const numPassengers = parseInt(messageText, 10);
-                    const currentDepartureId = session.bookingDetails.departureId;
-                    const departureToBook = await Departure.findById(currentDepartureId);
+
+                    // Check for essential booking details before proceeding
+                    const { origin, destination, date, departureId, fare } = session.bookingDetails;
+                    if (!origin || !destination || !date || !departureId || !fare) {
+                        reply = "Missing previous booking details. Please try 'reset' and start over.";
+                        await sessionService.resetSession(waId);
+                        logger.error(`[Conversation - ask_passengers] Missing essential booking details (origin, dest, date, depId, fare) at start of ask_passengers. Session: ${JSON.stringify(session.bookingDetails)}. Resetting session.`);
+                        break;
+                    }
+
+                    const departureToBook = await Departure.findById(departureId);
                     logger.debug(`[Conversation - ask_passengers] Parsed passengers: ${numPassengers}, Departure seats available: ${departureToBook ? departureToBook.availableSeats : 'N/A'}`);
 
                     if (departureToBook && !isNaN(numPassengers) && numPassengers > 0 && numPassengers <= departureToBook.availableSeats) {
                         logger.debug(`[Conversation - ask_passengers] Valid number of passengers.`);
                         await sessionService.updateBookingDetails(waId, { passengers: numPassengers });
-                        // Re-fetch session to ensure bookingDetails are fully updated before review
-                        session = await sessionService.getSession(waId); // This refresh is important
-                        const { origin, destination, passengers, departureId } = session.bookingDetails;
+                        // CRITICAL: Refresh session immediately after update
+                        session = await sessionService.getSession(waId);
+
+                        // Recalculate and prepare for review
                         const finalDeparture = await Departure.findById(departureId).populate('route').populate('vehicle');
 
                         if (finalDeparture) {
                             const totalAmount = finalDeparture.fare * passengers;
+                            // Optionally store totalAmount in session if needed for later stages
                             await sessionService.updateBookingDetails(waId, { totalAmount: totalAmount });
-                            logger.debug(`[Conversation - ask_passengers] Calculated total amount: ${totalAmount}. Moving to review_booking.`);
+                            session = await sessionService.getSession(waId); // Refresh after totalAmount update
 
-                            let reviewMsg = `Alright, let's review your trip:\n\n`;
-                            reviewMsg += `*Route:* ${finalDeparture.route.origin} to ${finalDeparture.route.destination}\n`;
-                            reviewMsg += `*Departure:* ${new Date(finalDeparture.departureTime).toLocaleString([], { dateStyle: 'full', timeStyle: 'short' })} (${finalDeparture.vehicle.name})\n`;
-                            reviewMsg += `*Passengers:* ${passengers}\n`;
-                            reviewMsg += `*Total Fare:* NGN${totalAmount.toLocaleString()}\n\n`;
-                            reviewMsg += `Is this correct? Reply 'Yes' to confirm or 'No' to start over.`;
-                            reply = reviewMsg;
+                            let reviewMessage = `Please review your booking details:\n\n`;
+                            reviewMessage += `*From:* ${session.bookingDetails.origin}\n`;
+                            reviewMessage += `*To:* ${session.bookingDetails.destination}\n`;
+                            reviewMessage += `*Date:* ${new Date(session.bookingDetails.date).toDateString()}\n`;
+                            reviewMessage += `*Time:* ${new Date(finalDeparture.departureTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' })}\n`;
+                            reviewMessage += `*Vehicle:* ${finalDeparture.vehicle.name}\n`;
+                            reviewMessage += `*Passengers:* ${session.bookingDetails.passengers}\n`;
+                            reviewMessage += `*Fare per person:* NGN${session.bookingDetails.fare.toLocaleString()}\n`;
+                            reviewMessage += `*Total Amount:* NGN${session.bookingDetails.totalAmount.toLocaleString()}\n\n`; // Use totalAmount from session
+                            reviewMessage += "Reply 'Yes' to confirm or 'No' to cancel.";
+
+                            reply = reviewMessage;
+                            logger.debug(`[Conversation - ask_passengers] Calculated total amount: ${totalAmount}. Moving to review_booking.`);
                             await sessionService.updateSessionStep(waId, 'review_booking');
                         } else {
-                            reply = "Could not retrieve full departure details for review. Please try again or 'reset'.";
+                            reply = "Could not find departure details for your booking. Please type 'reset' to start over.";
                             await sessionService.resetSession(waId);
-                            logger.error(`[Conversation - ask_passengers] Failed to retrieve final departure details for review. Resetting session.`);
+                            logger.error(`[Conversation - ask_passengers] Final departure not found after passengers selected. Resetting session.`);
                         }
-
-                    } else if (departureToBook && (numPassengers <= 0 || numPassengers > departureToBook.availableSeats)) {
-                        reply = `Sorry, only ${departureToBook.availableSeats} seats are available for this departure. Please enter a number between 1 and ${departureToBook.availableSeats}.`;
-                        logger.debug(`[Conversation - ask_passengers] Invalid passenger count (${numPassengers}) for available seats (${departureToBook.availableSeats}).`);
                     } else {
-                        reply = "Please enter a valid number of passengers.";
-                        logger.debug(`[Conversation - ask_passengers] Invalid passenger input: "${messageText}".`);
+                        reply = `Invalid number of passengers or not enough seats available (${departureToBook ? departureToBook.availableSeats : 0} seats left). Please enter a valid number.`;
+                        logger.debug(`[Conversation - ask_passengers] Invalid passengers input: "${messageText}".`);
                     }
                     break;
 
                 case 'review_booking':
                     logger.debug(`[Conversation - review_booking] Processing message: "${messageText}"`);
-                    session = await sessionService.getSession(waId); // <<< ENSURE FRESH SESSION
-                    if (messageText === 'yes') {
+                    session = await sessionService.getSession(waId); // Ensure fresh session for this confirmation
+
+                    // Destructure all expected booking details
+                    const { origin: finalOrigin, destination: finalDestination, date: finalDate,
+                            departureId: finalDepartureId, passengers: finalPassengers,
+                            fare: finalFare, totalAmount: finalTotalAmount } = session.bookingDetails;
+
+                    if (messageText === 'yes' || messageText === 'confirm') {
                         logger.debug(`[Conversation - review_booking] User confirmed booking.`);
-                        const { departureId, passengers, totalAmount } = session.bookingDetails;
 
-                        if (departureId && passengers && totalAmount) {
-                            logger.debug(`[Conversation - review_booking] Creating new booking...`);
-                            const newBooking = new Booking({
-                                userId: waId,
-                                sessionId: session._id,
-                                departure: departureId,
-                                passengers: passengers,
-                                totalAmount: totalAmount,
-                                status: 'pending',
-                                paymentStatus: 'pending'
-                            });
-                            await newBooking.save();
-                            logger.debug(`[Conversation - review_booking] Booking saved with ID: ${newBooking._id}, Ref: ${newBooking.bookingReference}`);
-
-                            // Atomically reduce available seats
-                            await Departure.findByIdAndUpdate(departureId, { $inc: { availableSeats: -passengers } });
-                            logger.debug(`[Conversation - review_booking] Available seats for departure ${departureId} reduced by ${passengers}.`);
-
-                            reply = `Excellent! Your booking for NGN${totalAmount.toLocaleString()} has been reserved (Reference: *${newBooking.bookingReference}*).\n\n` +
-                                    "Payment instructions will follow (future step).\n\n" +
-                                    "Thank you for booking with us!";
-                            await sessionService.updateSessionStep(waId, 'booking_complete');
-                        } else {
-                            reply = "Missing booking details. Please try 'reset' and start over.";
+                        // Strict check: Ensure all essential booking details are present before finalizing
+                        if (!finalOrigin || !finalDestination || !finalDate || !finalDepartureId || !finalPassengers || !finalFare || !finalTotalAmount) {
+                            reply = "Missing critical booking details. Please try 'reset' and start over.";
                             await sessionService.resetSession(waId);
-                            logger.error(`[Conversation - review_booking] Missing booking details despite 'yes' confirmation. Resetting session.`);
+                            logger.error(`[Conversation - review_booking] Missing critical booking details despite 'yes' confirmation. Session bookingDetails: ${JSON.stringify(session.bookingDetails)}. Resetting session.`);
+                            break; // Exit the switch case
                         }
 
-                    } else if (messageText === 'no') {
+                        const finalDeparture = await Departure.findById(finalDepartureId).populate('route').populate('vehicle');
+
+                        if (finalDeparture) {
+                            // Check if enough seats are still available right before booking
+                            if (finalDeparture.availableSeats < finalPassengers) {
+                                reply = `Sorry, only ${finalDeparture.availableSeats} seats are now available for that departure. Please try again or type 'reset'.`;
+                                await sessionService.resetSession(waId);
+                                logger.warn(`[Conversation - review_booking] Not enough seats for booking ${finalDepartureId}. Requested: ${finalPassengers}, Available: ${finalDeparture.availableSeats}. Resetting session.`);
+                                break;
+                            }
+
+                            const newBooking = new Booking({
+                                waId: waId,
+                                route: finalDeparture.route._id,
+                                departure: finalDeparture._id,
+                                bookingDate: new Date(), // When the booking was made
+                                travelDate: finalDate,   // The date of travel
+                                passengers: finalPassengers,
+                                totalFare: finalTotalAmount, // Use the stored totalAmount
+                                status: 'confirmed', // Or 'pending_payment'
+                            });
+
+                            try {
+                                await newBooking.save();
+                                // Decrement available seats
+                                finalDeparture.availableSeats -= finalPassengers;
+                                await finalDeparture.save();
+
+                                reply = `🎉 Booking confirmed! Your reference number is *${newBooking._id}*. Total: NGN${newBooking.totalFare.toLocaleString()}.\n\nThank you for choosing us!`;
+                                await sessionService.resetSession(waId); // Reset session after successful booking
+                                logger.info(`[Conversation - review_booking] Booking ${newBooking._id} created and seats updated. Final message: "${reply}"`);
+                            } catch (bookingError) {
+                                logger.error(`[Conversation - review_booking] Error saving booking or updating departure: ${bookingError.message}`);
+                                reply = "Sorry, there was an error finalizing your booking. Please try again or type 'reset'.";
+                                await sessionService.resetSession(waId);
+                            }
+                        } else {
+                            reply = "Could not find departure details for your booking. Please type 'reset' to start over.";
+                            await sessionService.resetSession(waId);
+                            logger.error(`[Conversation - review_booking] Final departure not found after confirmation. Resetting session.`);
+                        }
+                    } else if (messageText === 'no' || messageText === 'cancel') {
+                        reply = "Okay, I've cancelled the booking process. Type 'menu' to start over.";
+                        await sessionService.resetSession(waId);
                         logger.debug(`[Conversation - review_booking] User cancelled booking.`);
-                        session = await sessionService.resetSession(waId); // This returns a new session.
-                        reply = "No problem, let's start over. What is your **departure city**?";
-                        await sessionService.updateSessionStep(waId, 'ask_origin');
                     } else {
-                        reply = "Please reply 'Yes' to confirm or 'No' to start over.";
-                        logger.debug(`[Conversation - review_booking] Invalid input for confirmation: "${messageText}".`);
+                        reply = "Please reply with 'Yes' to confirm or 'No' to cancel.";
+                        logger.debug(`[Conversation - review_booking] Invalid input during review, re-prompting.`);
                     }
-                    break;
-
-                case 'booking_complete':
-                    logger.debug(`[Conversation - booking_complete] Reprompting for new task.`);
-                    // No need to refetch session here, as we are transitioning to a known state.
-                    reply = "Your booking is complete! I'm ready for a new task. Say 'menu' to see options.";
-                    await sessionService.updateSessionStep(waId, 'main_menu');
-                    break;
-
-                case 'main_menu':
-                    logger.debug(`[Conversation - main_menu] Displaying main menu.`);
-                    // No need to refetch session here.
-                    reply = "How can I help you today?\n\n*1.* 🚌 Book a new trip\n*2.* ℹ️ Check my booking\n*3.* 📞 Contact support";
-                    await sessionService.updateSessionStep(waId, 'welcome');
                     break;
 
                 default:
-                    logger.warn(`[Conversation] Unrecognized step '${session.currentStep}'. Resetting to welcome.`);
-                    reply = "I'm sorry, I don't understand that. Please type 'menu' to see options.";
-                    // If we don't recognize the step, assume a clean slate and reset.
-                    session = await sessionService.resetSession(waId); // This also updates the session object.
-                    await sessionService.updateSessionStep(waId, 'welcome');
+                    reply = "I'm not sure what you mean. Type 'menu' to see options.";
+                    logger.debug(`[Conversation] Unknown currentStep: ${session.currentStep}. Re-prompting with menu.`);
                     break;
             }
         }
 
+        // Send the reply
         await sendReply(waId, reply, twiml);
-    },
-
-    /**
-     * Helper function to parse various date inputs.
-     * Could be expanded with a more robust date parsing library if needed.
-     * @param {string} input
-     * @returns {Date|null}
-     */
-    parseDateInput: (input) => {
-        logger.debug(`[parseDateInput] Parsing input: "${input}"`);
-        let date = null;
-        const today = new Date();
-        today.setHours(0,0,0,0); // Normalize to start of day for comparison
-
-        if (input === 'today') {
-            date = today;
-            logger.debug(`[parseDateInput] Parsed as 'today': ${date.toISOString()}`);
-        } else if (input === 'tomorrow') {
-            date = new Date(today);
-            date.setDate(today.getDate() + 1);
-            logger.debug(`[parseDateInput] Parsed as 'tomorrow': ${date.toISOString()}`);
-        } else if (input.startsWith('next ')) {
-            const dayOfWeekStr = input.substring(5).toLowerCase();
-            const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-            const dayIndex = days.indexOf(dayOfWeekStr);
-            if (dayIndex !== -1) {
-                date = new Date(today);
-                date.setDate(today.getDate() + (dayIndex + 7 - today.getDay()) % 7);
-                 if (date.getDay() === today.getDay() && date <= today) { // If next [day] is today or in the past, get next week's
-                    date.setDate(date.getDate() + 7);
-                }
-                logger.debug(`[parseDateInput] Parsed as 'next ${dayOfWeekStr}': ${date.toISOString()}`);
-            }
-        } else {
-            // Try parsing as YYYY-MM-DD
-            const parts = input.split('-');
-            if (parts.length === 3) {
-                const year = parseInt(parts[0], 10);
-                const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
-                const day = parseInt(parts[2], 10);
-                if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
-                    date = new Date(year, month, day);
-                    // Check if date is valid (e.g., Feb 30 becomes March 2, we want to reject it)
-                    if (date.getFullYear() !== year || date.getMonth() !== month || date.getDate() !== day) {
-                        date = null;
-                    }
-                }
-            }
-            if (date) logger.debug(`[parseDateInput] Parsed as YYYY-MM-DD: ${date.toISOString()}`);
-        }
-
-        // Ensure date is not in the past (only future or today)
-        if (date && date < today) {
-            logger.debug(`[parseDateInput] Date ${date.toISOString()} is in the past, returning null.`);
-            return null;
-        }
-
-        logger.debug(`[parseDateInput] Final parsed date result: ${date ? date.toISOString() : 'null'}`);
-        return date;
-    },
-
-    /**
-     * Helper function to validate user input against a list of options (text or number).
-     * @param {string} input - User's message text (already lowercased and trimmed).
-     * @param {Array<string>} options - Array of valid string options (e.g., ['ABUJA', 'LAGOS']).
-     * @returns {string|null} The matched option (original case from 'options' array) or null if no match.
-     */
-    validateChoice: (input, options) => {
-        logger.debug(`[validateChoice] Input: "${input}", Options: ${JSON.stringify(options)}`);
-
-        // 1. Try to match by exact text (case-insensitive)
-        const matchedByText = options.find(opt => opt.toLowerCase() === input.toLowerCase());
-        if (matchedByText) {
-            logger.debug(`[validateChoice] Matched by text: "${matchedByText}"`);
-            return matchedByText; // Return the original case from the options array
-        }
-
-        // 2. Try to match by number (1-indexed)
-        const chosenIndex = parseInt(input, 10);
-        if (!isNaN(chosenIndex) && chosenIndex >= 1 && chosenIndex <= options.length) {
-            const matchedByNumber = options[chosenIndex - 1];
-            logger.debug(`[validateChoice] Matched by number: "${matchedByNumber}" (Index: ${chosenIndex - 1})`);
-            return matchedByNumber; // Return the original case from the options array
-        }
-
-        logger.debug(`[validateChoice] No match found.`);
-        return null; // No valid choice found
     }
 };
 
 module.exports = conversationService;
-
