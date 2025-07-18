@@ -2,16 +2,16 @@
 const mongoose = require('mongoose');
 
 const bookingSchema = new mongoose.Schema({
-    userId: { // References the WhatsApp user ID (or your internal User model ID)
-        type: String, // Keeping it as String for now, matching waId
+    userId: {
+        type: String,
         required: true
     },
-    sessionId: { // References the session that created this booking
+    sessionId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Session',
         required: true
     },
-    departure: { // Reference to the specific departure chosen
+    departure: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Departure',
         required: true
@@ -21,7 +21,7 @@ const bookingSchema = new mongoose.Schema({
         required: true,
         min: 1
     },
-    totalAmount: { // Final amount charged for this booking
+    totalAmount: {
         type: Number,
         required: true,
         min: 0
@@ -29,7 +29,7 @@ const bookingSchema = new mongoose.Schema({
     bookingReference: { // Unique reference code for the user
         type: String,
         unique: true,
-        required: true
+        required: true // KEEP required: true
     },
     status: {
         type: String,
@@ -47,13 +47,21 @@ const bookingSchema = new mongoose.Schema({
     }
 });
 
-// Generate a simple booking reference before saving
-bookingSchema.pre('save', function(next) {
-    if (this.isNew && !this.bookingReference) {
-        // Simple alphanumeric reference. For production, consider UUID or similar.
-        this.bookingReference = Math.random().toString(36).substring(2, 10).toUpperCase();
-    }
-    next();
-});
+// --- REMOVE THIS ENTIRE BLOCK ---
+// bookingSchema.pre('save', function(next) {
+//     if (this.isNew && !this.bookingReference) {
+//         this.bookingReference = Math.random().toString(36).substring(2, 10).toUpperCase();
+//     }
+//     next();
+// });
+// --- END REMOVAL ---
+
+// --- Add this line to ensure the model is always re-registered fresh (for development) ---
+// In a very strict production environment, this might not be ideal,
+// but for solving this persistent issue, it's very effective.
+if (mongoose.models.Booking) {
+    delete mongoose.models.Booking;
+}
+
 
 module.exports = mongoose.model('Booking', bookingSchema);
