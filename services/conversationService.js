@@ -444,6 +444,11 @@ const conversationService = {
                                 break;
                             }
 
+// --- CRITICAL FIX: Generate bookingReference BEFORE creating the Booking object ---
+const generatedBookingReference = Math.random().toString(36).substring(2, 10).toUpperCase();
+                            logger.debug(`[Conversation - review_booking] Generated bookingReference: ${generatedBookingReference}`);
+
+
                             // --- CRITICAL FIXES FOR BOOKING OBJECT CREATION ---
                             const newBooking = new Booking({
                                 userId: waId, // Using waId as userId as per Booking schema
