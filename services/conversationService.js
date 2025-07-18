@@ -455,9 +455,10 @@ const generatedBookingReference = Math.random().toString(36).substring(2, 10).to
                                 sessionId: session._id, // Use the actual Mongoose _id of the session document
                                 departure: finalDeparture._id,
                                 passengers: finalPassengers,
-                                totalAmount: finalTotalAmount, // Corrected field name to match Booking schema
-                                // bookingReference is handled by pre('save') hook in Booking.js
-                                // status defaults to 'pending' as per Booking.js, unless we set 'confirmed' here
+                                totalAmount: finalTotalAmount,
+                               bookingReference: generatedBookingReference, 
+                                // Corrected field name to match Booking schema
+         // status defaults to 'pending' as per Booking.js, unless we set 'confirmed' here
                                 status: 'confirmed', // Explicitly setting status as confirmed on user confirmation
                                 // paymentStatus defaults to 'pending' as per Booking.js
                                 // createdAt defaults to Date.now as per Booking.js
