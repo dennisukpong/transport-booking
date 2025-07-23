@@ -161,7 +161,7 @@ const conversationService = {
                     "*2.* Check my booking (Coming Soon)\n" +
                     "*3.* Help & Support (Coming Soon)\n\n" +
                     "Please reply with the number of your choice, or type 'reset' to start over.";
-            await sessionService.updateSessionStep(waId, 'start');
+            await sessionService.updateSessionStep(waId, 'Welcome');
             return reply; // Return early if explicit menu
         }
         if (messageText.toLowerCase() === 'support') {
@@ -172,7 +172,7 @@ const conversationService = {
 
         // Main conversational flow based on session step
         switch (session.currentStep) {
-            case 'start':
+            case 'welcome':
                 logger.debug(`[Conversation - start] Processing message: "${messageText}"`);
                 if (messageText === '1' || messageText.toLowerCase() === 'book a new trip') {
                     const origins = await Route.distinct('origin', { isActive: true });
